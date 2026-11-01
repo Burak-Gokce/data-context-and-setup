@@ -142,7 +142,37 @@ class Seller:
         'seller_id', 'share_of_five_stars', 'share_of_one_stars', 'review_score'
         """
 
-        pass  # YOUR CODE HERE
+        # Siparişleri ve değerlendirmeleri al
+        order_items = self.data['order_items'].copy()
+        reviews = self.data['order_reviews'].copy()
+
+        # Her siparişi ilgili satıcıyla eşleştir
+        orders_sellers = order_items[
+        ['order_id', 'seller_id']
+        ].drop_duplicates()
+
+        # Değerlendirmeleri satıcılara bağla
+        seller_reviews = orders_sellers.merge(
+        reviews[['order_id', 'review_score']],
+        on='order_id',
+        how='inner'
+        )
+
+        # Satıcı bazında değerlendirme metriklerini hesapla
+        result = seller_reviews.groupby('seller_id').agg(
+        share_of_five_stars=(
+        'review_score',
+        lambda scores: (scores == 5).mean()
+        ),
+        share_of_one_stars=(
+        'review_score',
+        lambda scores: (scores == 1).mean()
+        ),
+        review_score=('review_score', 'mean')
+        ).reset_index()
+
+        return result
+
 
     def get_training_data(self):
         """
